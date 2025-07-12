@@ -8,7 +8,7 @@ let isActive = true;
 let downtimeEmailSent = false;
 
 const downtimeRecipients = ['marian9508@gmail.com'];
-const alertRecipients = ['marian9508@gmail.com'];
+const alertRecipients = ['marian9508@gmail.com','Proudaction357@gmail.com'];
 const errorRecipients = ['marian9508@gmail.com'];
 
 const FILE_PATH = path.resolve(__dirname, 'CanceledGoals.txt');
