@@ -4,11 +4,13 @@ const path = require('path');
 const puppeteer = require('puppeteer');
 const nodemailer = require('nodemailer');
 require('dotenv').config();
+
+const isRender = !!process.env.RENDER;  // Render sets a RENDER env var in its containers
 let isActive = true;
 let downtimeEmailSent = false;
 
 const downtimeRecipients = ['marian9508@gmail.com'];
-const alertRecipients = ['marian9508@gmail.com','Proudaction357@gmail.com'];
+const alertRecipients = ['marian9508@gmail.com', 'Proudaction357@gmail.com'];
 const errorRecipients = ['marian9508@gmail.com'];
 
 const FILE_PATH = path.resolve(__dirname, 'CanceledGoals.txt');
@@ -52,7 +54,14 @@ async function executeLogic() {
 
   let browser;
   try {
-    browser = await puppeteer.launch();
+    // …with something like:
+    const launchOpts = { headless: true };
+    if (isRender) {
+      // on Render.com their container has Chromium at /usr/bin/chromium-browser
+      launchOpts.executablePath = '/usr/bin/chromium-browser';
+      launchOpts.args = ['--no-sandbox', '--disable-setuid-sandbox'];
+    }
+    browser = await puppeteer.launch(launchOpts);
     const page = await browser.newPage();
 
     const responsePromise = page.waitForResponse(response =>
