@@ -5,7 +5,6 @@ const puppeteer = require('puppeteer');
 const nodemailer = require('nodemailer');
 require('dotenv').config();
 
-const isRender = !!process.env.RENDER;  // Render sets a RENDER env var in its containers
 let isActive = true;
 let downtimeEmailSent = false;
 
@@ -54,14 +53,8 @@ async function executeLogic() {
 
   let browser;
   try {
-    // …with something like:
-    const launchOpts = { headless: true };
-    if (isRender) {
-      // on Render.com their container has Chromium at /usr/bin/chromium-browser
-      launchOpts.executablePath = '/usr/bin/chromium-browser';
-      launchOpts.args = ['--no-sandbox', '--disable-setuid-sandbox'];
-    }
-    browser = await puppeteer.launch(launchOpts);
+
+    browser = await puppeteer.launch();
     const page = await browser.newPage();
 
     const responsePromise = page.waitForResponse(response =>

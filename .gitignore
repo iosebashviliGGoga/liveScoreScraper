@@ -1,3 +1,4 @@
 node_modules
 CanceledGoals.txt
 .env
+.cache
