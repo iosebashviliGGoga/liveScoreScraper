@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const puppeteer = require('puppeteer');
 const nodemailer = require('nodemailer');
-
+require('dotenv').config();
 let isActive = true;
 let downtimeEmailSent = false;
 
@@ -13,14 +13,13 @@ const errorRecipients = ['marian9508@gmail.com'];
 
 const FILE_PATH = path.resolve(__dirname, 'CanceledGoals.txt');
 
-// SMTP setup
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 587,
   secure: false,
   auth: {
-    user: 'randd2244@gmail.com',
-    pass: 'skqe kytr oaxd cxyh'
+    user: process.env.smtpUser,
+    pass: process.env.smtpPass
   }
 });
 
@@ -56,19 +55,15 @@ async function executeLogic() {
     browser = await puppeteer.launch();
     const page = await browser.newPage();
 
-    // 1) wait for the exact AJAX response
     const responsePromise = page.waitForResponse(response =>
       response.url().endsWith(apiPath) && response.status() === 200
     );
 
-    // 2) go to the page that issues that request
     await page.goto(pageUrl, { waitUntil: 'networkidle2' });
 
-    // 3) once intercepted, grab its text
     const apiResponse = await responsePromise;
     const text = await apiResponse.text();
 
-    // 4) downtime logic
     if (!text) {
       console.warn('⚠️  No data returned from AJAX');
       if (isActive) {
@@ -85,15 +80,13 @@ async function executeLogic() {
       return;
     }
 
-    // 5) recovered?
     if (!isActive) {
       isActive = true;
       downtimeEmailSent = false;
       console.log('✅  AJAX recovered; resuming 10s polling');
     }
 
-    // ── UPDATED PARSING BLOCK ───────────────────────────────────────
-    // payload is { matches: […], mt: '…' }
+    // payload: { rs: […], mt: '…' }
     const payload = JSON.parse(text);
     if (!payload.rs || !Array.isArray(payload.rs)) {
       throw new Error('Expected payload.matches to be an array');
@@ -102,20 +95,18 @@ async function executeLogic() {
     console.log(`🕹  Retrieved ${matches.length} matches via network interception`);
     // ────────────────────────────────────────────────────────────────
 
-    // 7) load existing records
     const existing = fs.existsSync(FILE_PATH)
       ? fs.readFileSync(FILE_PATH, 'utf-8').split(/\r?\n/)
       : [];
 
     const newLines = [];
 
-    // 8) scan each match’s events_graph.events for canceled goals
     for (const m of matches) {
       const evs = m.events_graph?.events;
       if (!Array.isArray(evs)) continue;
 
       for (const e of evs) {
-      //  console.log(e,"evss")
+        //  console.log(e,"evss")
         if (e.t === 'ggc' || e.t === 'hgc') {
           const recId = `${m.id}_${e.status}`;
           if (!existing.some(r => r.includes(recId))) {
@@ -130,7 +121,6 @@ async function executeLogic() {
       }
     }
 
-    // 9) append & email if there are new lines
     if (newLines.length) {
       fs.appendFileSync(FILE_PATH, newLines.join('\n') + '\n', 'utf-8');
       await sendEmail(alertRecipients, 'Goal Canceled', newLines.join('\n'));
@@ -150,7 +140,6 @@ async function executeLogic() {
   }
 }
 
-// self-scheduling so interval adapts to up/down
 async function scheduler() {
   await executeLogic();
   const delay = isActive ? 10_000 : 60_000;
