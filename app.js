@@ -105,7 +105,7 @@ async function executeLogic() {
             newLines.push(
               `UnID - ${recId} ::: Match Id - ${m.id} ::: ${e.content} Goal Canceled @${e.status}`
             );
-            emailContent.push(`${e.content} Goal Canceled @${e.status}`); // Add the descriptive part
+            emailContent.push(`${e.content} Goal Canceled`); // Add the descriptive part
           } else {
             console.log(`${e.content}  Goal Canceled @${e.status} -- OLD`);
           }
